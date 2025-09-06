@@ -1,39 +1,11 @@
 #%%
 import pandas as pd
 
-base1 = "campeonato-brasileiro-cartoes.csv"
-base2 = "campeonato-brasileiro-estatisticas-full.csv"
 base3 = "campeonato-brasileiro-full.csv"
-base4 = "campeonato-brasileiro-gols.csv"
-base5 = "former_names.csv"
-base6 = "goalscorers.csv"
 base7 = "results.csv"
-base8 = "shootouts.csv"
 
-cartoes = pd.read_csv(base1)
-estatisticas = pd.read_csv(base2)
 brasileiro = pd.read_csv(base3)
-gols = pd.read_csv(base4)
-nomes = pd.read_csv(base5)
-artilheiros = pd.read_csv(base6)
 resultados = pd.read_csv(base7)
-decisoes = pd.read_csv(base8)
-#%%
-cartoes.head()
-#%%
-gols.head()
-#%%
-estatisticas.head()
-#%%
-brasileiro
-#%%
-nomes.head()
-#%%
-artilheiros.head() 
-#%%
-resultados.head()
-#%%
-decisoes.head()
 #%%
 #dados do Brasil tratados
 resultados_brazil_home = resultados[resultados['home_team'] == "Brazil"]#jogos do Brasil como time da casa
@@ -61,24 +33,6 @@ jogos_flamengo['vencedor'] = jogos_flamengo['vencedor'].str.replace('Botafogo-RJ
 jogos_flamengo.rename(columns={'data':'date'},inplace=True)
 jogos_flamengo['vencedor'].value_counts()
 #%%
-#Padronizando as colunas 
-'''nomes_coluna_brasil = {'date': 'data',
-                       'home_team': 'mandante',
-                       'away_team': 'visitante',
-                       'home_score': 'mandante_Placar',
-                       'away_score': 'visitante_Placar'
-                       }
-jogos_brasil_novo = jogos_brasil.rename(columns=nomes_coluna_brasil)
-brasil_formatado = jogos_brasil_novo[['data',
-                                    'mandante',
-                                    'visitante',
-                                    'vencedor',
-                                    'mandante_Placar',
-                                    'visitante_Placar',
-                                    'data_formatada']]
-
-   # Para cada data do Brasil, pegar o primeiro Flamengo após '''
-#%%
 # Merge_asof
 resultado = pd.merge_asof(
     jogos_brasil,
@@ -89,4 +43,63 @@ resultado = pd.merge_asof(
 )
 
 #%%
-#DEU ERRADO MEU RESULTADO, ACHO QUE PRECISO FILTRAR PARA AMBOS TEREM O MESMO PERIODO DE DATAS
+resultado['data_formatada_flamengo'] = pd.to_datetime(resultado['data_formatada_flamengo'])
+resultado.dropna(subset='vencedor_flamengo', inplace=True)
+resultado.drop_duplicates(subset=['data_formatada_flamengo'],keep='last',inplace=True)
+resultado.reset_index(drop=True, inplace=True)
+resultado['data_formatada_flamengo'] = resultado['data_formatada_flamengo'].dt.strftime('%d/%m%Y')
+#%%
+resultado['resultado'] = resultado.apply(lambda x: "Vitoria" if x['vencedor_flamengo'] == 'Flamengo' else "Empate" if x['vencedor_flamengo'] == 'Empate' else 'Derrota', axis=1)
+
+'''Poderia usar 
+resultado['resultado'] = resultado['vencedor_flamengo'].map({
+    'Flamengo': 'Vitoria',
+    'Empate': 'Empate'
+}).fillna('Derrota')'''
+
+# resultado dos jogos do flamengo apos seleção desde 2003
+resultado['resultado'].value_counts(normalize=True)
+
+#%%
+# Resultado por ano
+
+resultado['Ano'] = resultado['date'].dt.year
+resultado.groupby(['Ano','resultado'])['resultado'].size()
+
+#%%
+import matplotlib.pyplot as plt
+
+contagem = resultado.groupby("Ano")["resultado"].value_counts().unstack().fillna(0)
+
+# Plotar gráfico de barras empilhadas
+contagem.plot(kind="bar", stacked=True, figsize=(12,6))
+plt.title("Resultados por ano")
+plt.xlabel("Ano")
+plt.ylabel("Quantidade de jogos")
+plt.legend(title="Resultado")
+plt.show()
+
+#%%
+#Gerando grafico de porcentagem de derrota vs Vitoria
+# Contagem
+contagem = resultado.groupby(["Ano", "resultado"]).size().unstack(fill_value=0)
+
+# Calcular porcentagens relativas
+percentuais = contagem.div(contagem.sum(axis=1), axis=0) * 100
+
+# Se quiser, agrupar Vitoria e Outros
+percentuais["%Vitoria"] = percentuais.get("Vitoria", 0)
+percentuais["%Outros"] = percentuais.get("Empate", 0) + percentuais.get("Derrota", 0)
+
+# Selecionar só as colunas finais
+percentuais = percentuais[["%Vitoria", "%Outros"]]
+
+# Plotar gráfico de barras
+percentuais.plot(kind="bar", stacked=True, figsize=(12,6))
+
+plt.title("Porcentagem de vitórias e outros resultados por ano")
+plt.xlabel("Ano")
+plt.ylabel("Porcentagem (%)")
+plt.legend(title="Resultado")
+plt.show()
+#%%
