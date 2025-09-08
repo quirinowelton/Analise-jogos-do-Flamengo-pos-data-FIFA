@@ -73,14 +73,14 @@ Isso sugere que **não há um padrão fixo**, mas sim variações ligadas ao **c
 ### 🔹 Resultados por Ano
 Distribuição dos resultados (Vitórias, Empates e Derrotas) do Flamengo após as pausas da Seleção:
 
-![Resultados por ano](figuras/resultados_por_ano.png)
+![Resultados por ano](numero_vitoria_empate_derrota.png)
 
 ---
 
 ### 🔹 Porcentagem de Vitórias vs Outros Resultados
 Análise percentual do desempenho do Flamengo após as pausas:
 
-![Porcentagem de vitórias e outros resultados](figuras/porcentagem_vitorias.png)
+![Porcentagem de vitórias e outros resultados](porcent_vitoria_outros.png)
 
 ---
 
